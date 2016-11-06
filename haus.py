@@ -1,7 +1,7 @@
 import sqlite3
 import uuid
 
-conn = sqlite3.connect('haus.db')
+conn = sqlite3.connect('haus.db', check_same_thread=False)
 c = conn.cursor()
 
 class User:
@@ -28,6 +28,9 @@ class User:
 
 	def get_email(self):
 		return self.email
+
+	def user_to_dictionary(self):
+		return {'id':self.get_id(), 'assoc_name':self.get_assoc_name(), 'address':self.get_address(), 'phone':self.get_phone(), 'email':self.get_email()}
 
 class Form:
 
@@ -69,17 +72,17 @@ class Controller:
 
 	def __init__(self): 
 		return
-
+	
 	def create_tables(self):
-		create_users_table()
-		create_forms_tables()
-		create_completed_forms_table()
+		self.create_users_table()
+		self.create_forms_tables()
+		self.create_completed_forms_table()
 		return
 
 	def delete_tables(self):
-		delete_users_table()
-		delete_forms_table()
-		delete_completed_forms_table()
+		self.delete_users_table()
+		self.delete_forms_table()
+		self.delete_completed_forms_table()
 
 	# --------------------- USERS TABLES ---------------------
 
@@ -113,6 +116,13 @@ class Controller:
 		t = (assoc_name,)
 		user_list = []
 		for row in c.execute('SELECT * FROM users WHERE assoc_name=?', t):
+			user_list.append( User(uid=row[0], assoc_name=row[1], address=row[2], phone=row[3], email=row[4]) )
+		return user_list
+
+	def get_users_by_substring_of_assoc_name(self, assoc_name):
+		t = ('%' + assoc_name + '%',)
+		user_list = []
+		for row in c.execute('SELECT * FROM users WHERE assoc_name LIKE ?', t):
 			user_list.append( User(uid=row[0], assoc_name=row[1], address=row[2], phone=row[3], email=row[4]) )
 		return user_list
 
@@ -240,15 +250,4 @@ class Controller:
 		conn.commit()
 		return
 
-def test_users():
-	connection = Controller()
-	connection.create_users_table()
-	connection.add_user(assoc_name="Berkly Lakes", address="6933 West Street, Coral Springs, FL 32304", phone="954-496-0433", email="tjl13c@my.fsu.edu")
-	connection.add_user(assoc_name="Merpy Stones", address="1234 East Drive, West Palm, MA 42134", phone="784-432-0123", email="here_we_go@google.com")
-	users = connection.get_users()
-	for user in users:
-		print user.get_phone()
-	connection.delete_users_table()
-
-test_users()
 
